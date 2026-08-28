@@ -7,6 +7,7 @@ Produit dans site/ :
   calendriers/tout.ics        un abonnement avec toutes les voitures
   planning.json               une copie de la source, pour référence
 
+
 Aucune dépendance : Python 3.9+ suffit.
 """
 
