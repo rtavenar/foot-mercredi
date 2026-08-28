@@ -3,6 +3,7 @@
 Qui emmène qui au foot le mercredi midi, saison 2026-2027.
 La page et les calendriers sont reconstruits automatiquement à chaque commit sur `main`.
 
+
 ## Le dépôt
 
 | Fichier | Rôle |
