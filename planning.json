@@ -1,0 +1,177 @@
+{
+  "saison": "2026-2027",
+  "premier_mercredi": "2026-09-02",
+  "dernier_jour_ecole": "2027-07-02",
+  "_commentaire_horaire": "null = evenements sur la journee entiere. Sinon {\"debut\":\"12:00\",\"duree_min\":120}.",
+  "horaire": null,
+  "vacances": [
+    {
+      "du": "2026-10-17",
+      "au": "2026-11-01",
+      "nom": "Vacances de la Toussaint"
+    },
+    {
+      "du": "2026-12-19",
+      "au": "2027-01-03",
+      "nom": "Vacances de Noël"
+    },
+    {
+      "du": "2027-02-20",
+      "au": "2027-03-07",
+      "nom": "Vacances d'hiver"
+    },
+    {
+      "du": "2027-04-17",
+      "au": "2027-05-02",
+      "nom": "Vacances de printemps"
+    }
+  ],
+  "feries": [
+    {
+      "date": "2026-11-11",
+      "nom": "Armistice"
+    }
+  ],
+  "familles": {
+    "AR": {
+      "nom": "Aude & Romain",
+      "enfants": [
+        "Martin"
+      ],
+      "slug": "aude-romain"
+    },
+    "ES": {
+      "nom": "Estelle & Sébastien",
+      "enfants": [
+        "Hector"
+      ],
+      "slug": "estelle-sebastien"
+    },
+    "HD": {
+      "nom": "Hélène & Damien",
+      "enfants": [
+        "Maxence",
+        "Clément"
+      ],
+      "slug": "helene-damien"
+    },
+    "JG": {
+      "nom": "Julie & Guirec",
+      "enfants": [
+        "Marin"
+      ],
+      "slug": "julie-guirec"
+    },
+    "AL": {
+      "nom": "Alice",
+      "enfants": [
+        "Hugo"
+      ],
+      "slug": "alice"
+    }
+  },
+  "roulement": {
+    "decalage": 1,
+    "semaines": [
+      {
+        "familles": [
+          "AR",
+          "ES"
+        ],
+        "avec_les_freres": "Martin"
+      },
+      {
+        "familles": [
+          "HD",
+          "JG"
+        ],
+        "avec_les_freres": "Martin"
+      },
+      {
+        "familles": [
+          "AL",
+          "AR"
+        ],
+        "avec_les_freres": "Hugo"
+      },
+      {
+        "familles": [
+          "ES",
+          "HD"
+        ],
+        "avec_les_freres": "Marin"
+      },
+      {
+        "familles": [
+          "JG",
+          "AL"
+        ],
+        "avec_les_freres": "Marin"
+      },
+      {
+        "familles": [
+          "AR",
+          "ES"
+        ],
+        "avec_les_freres": "Hector"
+      },
+      {
+        "familles": [
+          "HD",
+          "JG"
+        ],
+        "avec_les_freres": "Hector"
+      },
+      {
+        "familles": [
+          "AL",
+          "AR"
+        ],
+        "avec_les_freres": "Martin"
+      },
+      {
+        "familles": [
+          "ES",
+          "HD"
+        ],
+        "avec_les_freres": "Hugo"
+      },
+      {
+        "familles": [
+          "JG",
+          "AL"
+        ],
+        "avec_les_freres": "Hugo"
+      }
+    ]
+  },
+  "exceptions": [
+    {
+      "date": "2026-09-02",
+      "familles": [
+        "JG",
+        "ES"
+      ],
+      "avec_les_freres": "Marin",
+      "note": "Première semaine : seules Julie-Guirec et Estelle-Sébastien étaient disponibles."
+    }
+  ],
+  "echanges": [
+    {
+      "date": "2026-11-04",
+      "de": "ES",
+      "vers": "JG"
+    },
+    {
+      "date": "2026-11-18",
+      "de": "JG",
+      "vers": "ES"
+    }
+  ],
+  "notes": [
+    {
+      "date": "2027-05-05",
+      "texte": "Veille du pont de l'Ascension : à confirmer avec le club."
+    }
+  ]
+}
