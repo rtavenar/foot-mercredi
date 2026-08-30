@@ -1,0 +1,87 @@
+{
+  "saison": "2026-2027",
+  "premier_mercredi": "2026-09-02",
+  "dernier_jour_ecole": "2027-07-02",
+  "_commentaire_horaire": "null = evenements sur la journee entiere. Sinon {\"debut\":\"12:00\",\"duree_min\":120}.",
+  "horaire": null,
+  "voitures": 1,
+  "texte": {
+    "sous_titre": "Une voiture de trois enfants, tous les mercredis d'école. Chaque famille se relaie au volant, avec toujours son enfant à bord.",
+    "regles_roulement": "Les trois familles se relaient dans l'ordre Marina-Erwan → Emmanuelle-Gilles → Joanna-Julien, une semaine chacune. S'ajoutent les échanges convenus au fil de l'année, signalés dans le tableau de la saison.",
+    "academie": "Calendrier de l'académie de Rennes (zone B)."
+  },
+  "vacances": [
+    {
+      "du": "2026-10-17",
+      "au": "2026-11-01",
+      "nom": "Vacances de la Toussaint"
+    },
+    {
+      "du": "2026-12-19",
+      "au": "2027-01-03",
+      "nom": "Vacances de Noël"
+    },
+    {
+      "du": "2027-02-20",
+      "au": "2027-03-07",
+      "nom": "Vacances d'hiver"
+    },
+    {
+      "du": "2027-04-17",
+      "au": "2027-05-02",
+      "nom": "Vacances de printemps"
+    }
+  ],
+  "feries": [
+    {
+      "date": "2026-11-11",
+      "nom": "Armistice"
+    }
+  ],
+  "familles": {
+    "ME": {
+      "nom": "Marina & Erwan",
+      "enfants": [
+        "Raphaël"
+      ],
+      "slug": "marina-erwan"
+    },
+    "EG": {
+      "nom": "Emmanuelle & Gilles",
+      "enfants": [
+        "Martin"
+      ],
+      "slug": "emmanuelle-gilles"
+    },
+    "JJ": {
+      "nom": "Joanna & Julien",
+      "enfants": [
+        "Isaac"
+      ],
+      "slug": "joanna-julien"
+    }
+  },
+  "roulement": {
+    "decalage": 0,
+    "semaines": [
+      {
+        "familles": [
+          "ME"
+        ]
+      },
+      {
+        "familles": [
+          "EG"
+        ]
+      },
+      {
+        "familles": [
+          "JJ"
+        ]
+      }
+    ]
+  },
+  "exceptions": [],
+  "echanges": [],
+  "notes": []
+}

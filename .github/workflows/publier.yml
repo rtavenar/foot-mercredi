@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - "planning.json"
+      - "*.json"
       - "build.py"
       - "template.html"
       - ".github/workflows/publier.yml"

@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
-"""Construit le site du planning foot à partir de planning.json.
+"""Construit le site du planning foot à partir d'un fichier JSON par groupe
+(romain.json, julien.json, ...).
 
 Produit dans site/ :
-  index.html                  la page consultable
-  calendriers/<slug>.ics      un abonnement par famille
-  calendriers/tout.ics        un abonnement avec toutes les voitures
-  planning.json               une copie de la source, pour référence
+  index.html                       redirige vers le groupe par défaut
+  <groupe>/index.html              la page consultable du groupe
+  <groupe>/calendriers/<slug>.ics  un abonnement par famille
+  <groupe>/calendriers/tout.ics    un abonnement avec toutes les voitures
+  <groupe>/<groupe>.json           une copie de la source, pour référence
 
 
 Aucune dépendance : Python 3.9+ suffit.
@@ -19,6 +21,7 @@ from pathlib import Path
 
 RACINE = Path(__file__).parent
 SORTIE = RACINE / "site"
+GROUPE_PAR_DEFAUT = "romain"
 
 
 # --------------------------------------------------------------- utilitaires
@@ -53,6 +56,22 @@ def mercredis(cfg):
 
 
 def compose(cfg, familles_de_service, avec_les_freres):
+    """Répartit les enfants dans une ou deux voitures selon le groupe."""
+    if cfg.get("voitures", 2) == 1:
+        return compose_solo(cfg, familles_de_service)
+    return compose_duo(cfg, familles_de_service, avec_les_freres)
+
+
+def compose_solo(cfg, familles_de_service):
+    """Une seule voiture, avec tous les enfants du groupe."""
+    fams = cfg["familles"]
+    conducteur = familles_de_service[0]
+    tous = [k for f in fams.values() for k in f["enfants"]]
+    siens = fams[conducteur]["enfants"]
+    return [{"fam": conducteur, "kids": siens + [k for k in tous if k not in siens]}]
+
+
+def compose_duo(cfg, familles_de_service, avec_les_freres):
     """Deux voitures de trois enfants, chaque conducteur avec son ou ses enfants."""
     fams = cfg["familles"]
     freres = max(fams, key=lambda f: len(fams[f]["enfants"]))       # Hélène & Damien
@@ -95,11 +114,11 @@ def saison(cfg, dates):
         iso = d.isoformat()
         if iso in exc:
             e = exc[iso]
-            cars = compose(cfg, e["familles"], e["avec_les_freres"])
+            cars = compose(cfg, e["familles"], e.get("avec_les_freres"))
             note = e.get("note")
         else:
             m = roul[(i + dec) % len(roul)]
-            cars = compose(cfg, m["familles"], m["avec_les_freres"])
+            cars = compose(cfg, m["familles"], m.get("avec_les_freres"))
             note = None
 
         if iso in ech:
@@ -130,8 +149,19 @@ def saison(cfg, dates):
 def verifie(cfg, semaines):
     fams = cfg["familles"]
     tous = sorted(k for f in fams.values() for k in f["enfants"])
+
+    if cfg.get("voitures", 2) == 1:
+        for s in semaines:
+            assert len(s["cars"]) == 1, f"{s['d']} : {len(s['cars'])} voiture(s) au lieu d'une"
+            c = s["cars"][0]
+            assert sorted(c["kids"]) == tous, f"{s['d']} : enfants manquants ou en double"
+            assert all(k in c["kids"] for k in fams[c["fam"]]["enfants"]), \
+                f"{s['d']} : {c['fam']} ne conduit pas son propre enfant"
+        return
+
     freres = max(fams, key=lambda f: len(fams[f]["enfants"]))
     for s in semaines:
+        assert len(s["cars"]) == 2, f"{s['d']} : {len(s['cars'])} voitures au lieu de deux"
         c1, c2 = s["cars"]
         assert c1["fam"] != c2["fam"], f"{s['d']} : même famille deux fois"
         assert sorted(c1["kids"] + c2["kids"]) == tous, f"{s['d']} : enfants manquants ou en double"
@@ -205,13 +235,12 @@ def ecris_calendriers(cfg, semaines, dossier):
             if not voiture:
                 continue
             passagers = [k for k in voiture["kids"] if k not in f["enfants"]]
+            autres = [fams[c["fam"]]["nom"] for c in s["cars"] if c["fam"] != cle]
             evs.append((s["d"], cle,
                         "Foot — au volant (" + ", ".join(voiture["kids"]) + ")",
                         "Trajet du mercredi midi. "
                         + (("Passagers : " + ", ".join(passagers) + ". ") if passagers else "")
-                        + ("L'autre voiture : "
-                           + next(fams[c["fam"]]["nom"] for c in s["cars"] if c["fam"] != cle)
-                           + ".")))
+                        + ("L'autre voiture : " + ", ".join(autres) + "." if autres else "")))
         (dossier / f"{f['slug']}.ics").write_text(
             ics(cfg, semaines, f"Foot du mercredi — {f['nom']}", evs), encoding="utf-8")
 
@@ -230,46 +259,79 @@ def ecris_page(cfg, semaines, sautes, dossier):
     cycle = []
     for i, m in enumerate(cfg["roulement"]["semaines"]):
         cycle.append({"n": i + 1,
-                      "cars": compose(cfg, m["familles"], m["avec_les_freres"])})
+                      "cars": compose(cfg, m["familles"], m.get("avec_les_freres"))})
     donnees = {
         "saison": cfg["saison"],
+        "voitures": cfg.get("voitures", 2),
+        "premier_mercredi": cfg["premier_mercredi"],
+        "dernier_jour_ecole": cfg["dernier_jour_ecole"],
+        "texte": cfg.get("texte", {}),
         "fams": {k: {"name": v["nom"], "kids": v["enfants"], "slug": v["slug"]}
                  for k, v in fams.items()},
         "season": semaines,
         "skipped": sautes,
         "cycle": cycle,
     }
+    titre = f"Foot du mercredi — planning des trajets {cfg['saison'].replace('-', '/')}"
+    description = f"Qui emmène qui au foot le mercredi midi. Saison {cfg['saison']}."
+
     gabarit = (RACINE / "template.html").read_text(encoding="utf-8")
-    page = gabarit.replace("/*__DATA__*/",
-                           json.dumps(donnees, ensure_ascii=False, separators=(",", ":")))
-    if "__DATA__" in page:
-        raise ValueError("le gabarit ne contient pas le repère /*__DATA__*/")
+    page = (gabarit
+            .replace("__TITRE__", titre)
+            .replace("__DESCRIPTION__", description)
+            .replace("/*__DATA__*/", json.dumps(donnees, ensure_ascii=False, separators=(",", ":"))))
+    if "__DATA__" in page or "__TITRE__" in page or "__DESCRIPTION__" in page:
+        raise ValueError("le gabarit ne contient pas tous les repères attendus")
     (dossier / "index.html").write_text(page, encoding="utf-8")
 
 
-def main():
-    cfg = json.loads((RACINE / "planning.json").read_text(encoding="utf-8"))
+def ecris_redirection(dossier, vers):
+    page = f"""<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="refresh" content="0; url={vers}/">
+<link rel="canonical" href="{vers}/">
+<title>Foot du mercredi</title>
+</head>
+<body>
+<p>Redirection vers <a href="{vers}/">le planning</a>&hellip;</p>
+</body>
+</html>
+"""
+    (dossier / "index.html").write_text(page, encoding="utf-8")
+
+
+# ---------------------------------------------------------------------- main
+
+def construire_groupe(nom):
+    cfg = json.loads((RACINE / f"{nom}.json").read_text(encoding="utf-8"))
     dates, sautes = mercredis(cfg)
     semaines = saison(cfg, dates)
     verifie(cfg, semaines)
 
-    SORTIE.mkdir(exist_ok=True)
-    ecris_page(cfg, semaines, sautes, SORTIE)
-    ecris_calendriers(cfg, semaines, SORTIE / "calendriers")
-    (SORTIE / "planning.json").write_text(
+    dossier = SORTIE / nom
+    dossier.mkdir(parents=True, exist_ok=True)
+    ecris_page(cfg, semaines, sautes, dossier)
+    ecris_calendriers(cfg, semaines, dossier / "calendriers")
+    (dossier / f"{nom}.json").write_text(
         json.dumps(cfg, ensure_ascii=False, indent=2), encoding="utf-8")
 
     conduites = {}
     for s in semaines:
         for c in s["cars"]:
             conduites[c["fam"]] = conduites.get(c["fam"], 0) + 1
-    print(f"{len(semaines)} mercredis, {len(sautes)} sans foot")
+    print(f"[{nom}] {len(semaines)} mercredis, {len(sautes)} sans foot")
     for k, v in sorted(conduites.items(), key=lambda kv: -kv[1]):
-        print(f"  {fams_nom(cfg, k):<22} {v} conduites")
+        print(f"  {cfg['familles'][k]['nom']:<22} {v} conduites")
 
 
-def fams_nom(cfg, cle):
-    return cfg["familles"][cle]["nom"]
+def main():
+    SORTIE.mkdir(exist_ok=True)
+    groupes = sorted(p.stem for p in RACINE.glob("*.json"))
+    for nom in groupes:
+        construire_groupe(nom)
+    ecris_redirection(SORTIE, GROUPE_PAR_DEFAUT)
 
 
 if __name__ == "__main__":

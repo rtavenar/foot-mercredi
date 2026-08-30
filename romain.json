@@ -4,6 +4,12 @@
   "dernier_jour_ecole": "2027-07-02",
   "_commentaire_horaire": "null = evenements sur la journee entiere. Sinon {\"debut\":\"12:00\",\"duree_min\":120}.",
   "horaire": null,
+  "voitures": 2,
+  "texte": {
+    "sous_titre": "Deux voitures, trois enfants chacune, tous les mercredis d'école. Un roulement de dix semaines qui tourne jusqu'en juin : chaque famille conduit ses propres enfants les jours où elle est de service.",
+    "regles_roulement": "Les deux familles de service avancent de deux crans à chaque fois dans l'ordre Aude-Romain → Estelle-Sébastien → Hélène-Damien → Julie-Guirec → Alice, et l'enfant qui monte avec Maxence et Clément change de semaine en semaine. Une seule entorse : le mercredi 2 septembre, réglé à part pour que Julie-Guirec et Estelle-Sébastien ouvrent la saison. Le décalage de départ est choisi pour que Julie-Guirec ne soient pas de service les 16 septembre et 14 octobre. S'ajoutent les échanges convenus au fil de l'année, signalés dans le tableau de la saison.",
+    "academie": "Calendrier de l'académie de Rennes (zone B)."
+  },
   "vacances": [
     {
       "du": "2026-10-17",
