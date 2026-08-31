@@ -82,6 +82,17 @@
     ]
   },
   "exceptions": [],
-  "echanges": [],
+  "echanges": [
+    {
+      "date": "2026-09-09",
+      "de": "EG",
+      "vers": "ME"
+    },
+    {
+      "date": "2026-10-14",
+      "de": "ME",
+      "vers": "EG"
+    }
+  ],
   "notes": []
 }
