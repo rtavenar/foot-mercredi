@@ -101,40 +101,121 @@ def compose_duo(cfg, familles_de_service, avec_les_freres):
             {"fam": conducteur2, "kids": range_devant(groupe2, conducteur2)}]
 
 
+def _duo_valide(cfg, cars):
+    """Une semaine à deux voitures est valide si chaque conducteur a ses
+    propres enfants à bord et si personne ne manque ni n'est en double."""
+    fams = cfg["familles"]
+    tous = sorted(k for f in fams.values() for k in f["enfants"])
+    if len(cars) != 2:
+        return False
+    c1, c2 = cars
+    if c1["fam"] == c2["fam"] or sorted(c1["kids"] + c2["kids"]) != tous:
+        return False
+    return all(len(c["kids"]) == 3 and all(k in c["kids"] for k in fams[c["fam"]]["enfants"])
+               for c in cars)
+
+
+def _resout_duo_avec_compagnon(cfg, nouvelles_familles, avec_les_freres):
+    """Compose une semaine à deux voitures pour `nouvelles_familles`, en
+    changeant au besoin qui accompagne les frères (cas où `avec_les_freres`
+    ne convient plus) pour que tout le monde conduise ses propres enfants."""
+    fams = cfg["familles"]
+    freres_kids = fams[max(fams, key=lambda f: len(fams[f]["enfants"]))]["enfants"]
+    tous = [k for f in fams.values() for k in f["enfants"]]
+    candidats = [avec_les_freres] + [k for k in tous if k not in freres_kids and k != avec_les_freres]
+    for candidat in candidats:
+        try:
+            cars = compose_duo(cfg, nouvelles_familles, candidat)
+        except ValueError:
+            continue
+        if _duo_valide(cfg, cars):
+            return cars, candidat
+    raise ValueError(
+        f"échange impossible : aucune répartition ne marche avec "
+        f"{', '.join(nouvelles_familles)} de service, même en changeant qui "
+        f"accompagne les frères")
+
+
+def _applique_echanges(cfg, familles_service, avec_les_freres, cars, paires, deux_voitures):
+    """Applique les échanges d'une même date (`paires` : liste de (de, vers)).
+    Les échanges qui portent sur des voitures différentes coexistent ; on ne
+    recompose la semaine que si l'un d'eux l'exige (cas des frères), et dans
+    ce cas on tient compte de tous les échanges du jour à la fois."""
+    fams = cfg["familles"]
+    if len({de for de, _ in paires}) != len(paires):
+        raise ValueError("plusieurs échanges partent de la même famille le même jour")
+    if len({vers for _, vers in paires}) != len(paires):
+        raise ValueError("plusieurs échanges vont vers la même famille le même jour")
+
+    simple = True
+    for de, vers in paires:
+        cible = next((c for c in cars if c["fam"] == de), None)
+        if cible is None:
+            raise ValueError(f"{de} n'est pas de service, échange impossible")
+        if not all(k in cible["kids"] for k in fams[vers]["enfants"]):
+            simple = False
+
+    notes = [f"Échange convenu : {fams[vers]['nom']} prend le tour de {fams[de]['nom']}."
+             for de, vers in paires]
+
+    if simple:
+        for de, vers in paires:
+            cible = next(c for c in cars if c["fam"] == de)
+            siens = fams[vers]["enfants"]
+            cible["fam"] = vers
+            cible["kids"] = siens + [k for k in cible["kids"] if k not in siens]
+        return cars, " ".join(notes)
+
+    if not deux_voitures:
+        de, vers = next((de, vers) for de, vers in paires
+                         if not all(k in next(c for c in cars if c["fam"] == de)["kids"]
+                                    for k in fams[vers]["enfants"]))
+        raise ValueError(f"{vers} ne peut pas prendre le tour de {de}, "
+                          f"ses enfants ne sont pas dans cette voiture")
+
+    mapping = dict(paires)
+    nouvelles = [mapping.get(f, f) for f in familles_service]
+    cars, compagnon = _resout_duo_avec_compagnon(cfg, nouvelles, avec_les_freres)
+    if compagnon != avec_les_freres:
+        freres = max(fams, key=lambda f: len(fams[f]["enfants"]))
+        notes.append(f"La voiture de {' et '.join(fams[freres]['enfants'])} change de "
+                     f"conducteur·rice cette semaine-là, donc c'est {compagnon} qui "
+                     f"l'accompagne, à la place de {avec_les_freres}.")
+    return cars, " ".join(notes)
+
+
 def saison(cfg, dates):
     roul = cfg["roulement"]["semaines"]
     dec = cfg["roulement"]["decalage"]
     exc = {e["date"]: e for e in cfg["exceptions"]}
-    ech = {e["date"]: e for e in cfg["echanges"]}
+    ech = {}
+    for e in cfg["echanges"]:
+        ech.setdefault(e["date"], []).append((e["de"], e["vers"]))
     notes = {n["date"]: n["texte"] for n in cfg["notes"]}
-    fams = cfg["familles"]
+    deux_voitures = cfg.get("voitures", 2) == 2
 
     semaines = []
     for i, d in enumerate(dates):
         iso = d.isoformat()
         if iso in exc:
             e = exc[iso]
-            cars = compose(cfg, e["familles"], e.get("avec_les_freres"))
+            familles_service = e["familles"]
+            avec_les_freres = e.get("avec_les_freres")
             note = e.get("note")
         else:
             m = roul[(i + dec) % len(roul)]
-            cars = compose(cfg, m["familles"], m.get("avec_les_freres"))
+            familles_service = m["familles"]
+            avec_les_freres = m.get("avec_les_freres")
             note = None
+        cars = compose(cfg, familles_service, avec_les_freres)
 
         if iso in ech:
-            de, vers = ech[iso]["de"], ech[iso]["vers"]
-            cible = next((c for c in cars if c["fam"] == de), None)
-            if cible is None:
-                raise ValueError(f"{iso} : {de} n'est pas de service, échange impossible")
-            siens = fams[vers]["enfants"]
-            manquants = [k for k in siens if k not in cible["kids"]]
-            if manquants:
-                raise ValueError(
-                    f"{iso} : {vers} ne peut pas prendre ce tour, "
-                    f"{', '.join(manquants)} n'est pas dans cette voiture")
-            cible["fam"] = vers
-            cible["kids"] = siens + [k for k in cible["kids"] if k not in siens]
-            note = f"Échange convenu : {fams[vers]['nom']} prend le tour de {fams[de]['nom']}."
+            try:
+                cars, note_echange = _applique_echanges(
+                    cfg, familles_service, avec_les_freres, cars, ech[iso], deux_voitures)
+            except ValueError as err:
+                raise ValueError(f"{iso} : {err}") from None
+            note = note_echange
 
         if iso in notes:
             note = notes[iso]
